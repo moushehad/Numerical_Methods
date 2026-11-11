@@ -1,0 +1,299 @@
+'''
+This program compares Cubic Spline to Newton's Divided Differences
+'''
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# create data arrays
+x = np.array([5.0, 7.0, 9.0])
+y = np.array([5.0, 2.0, 4.0])
+
+# create variable for length
+n = len(x) - 1
+
+#===================================================
+# Part 1: Cubic Spline
+#===================================================
+
+# Step 1: Compute h_i = x_{i+1} - x_i
+h = np.diff(x)
+
+# Step 2: Find derivatives of M_i
+#
+#Natural spline bounary conditions:
+# M_0 = 0and M_n = 0
+
+# create dummy matrix and vector A,b
+A = np.zeros((n+1, n+1))
+b = np.zeros(n+1)
+
+# Natrual boundary conditions
+A[0,0] = 1
+A[n,n] = 1
+
+# Interior equations
+
+for i in range(1,n):
+    A[i, i-1] = h[i-1]
+    A[i,i] = 2*(h[i-1] + h[i])
+    A[i,i+1] = h[i]
+
+    b[i] = 6 * (
+        (y[i+1] - y[i]) / h[i]
+        - (y[i] - y[i-1]) / h[i-1]
+        )
+# Solve the system
+M = np.linalg.solve(A,b)
+
+print("NATURAL CUBIC SPLINE")
+
+print("\nSecond derivatives:")
+
+for i in range(n+1):
+    print(f"M{i} = {M[i]:.6f}")
+
+#---------------------------------------------
+
+# Construct each spline polynomial
+
+# S_i(x) = a_i + b_i(x-x_i)
+#       + c_i(x-x_i)^2 + d_i(x-x_i)^3
+
+# create dummy array length n
+a = np.zeros(n)
+bb = np.zeros(n)
+c = np.zeros(n)
+d = np.zeros(n)
+
+for i in range(n):
+
+    # from cubic spline conditions
+    a[i] = y[i]
+
+    bb[i] = (
+        (y[i+1] - y[i]) / h[i]
+        -h[i]*(2*M[i] + M[i+1])/6
+        )
+
+    c[i] = M[i] / 2
+    d[i] = (M[i+1] - M[i])/(6*h[i])
+
+# Display the piecewise cubic spline
+
+print("\nCubic Spline:")
+print("\nS(x) =")
+
+for i in range(n):
+
+    # display piecewise function S(x)
+    print(
+        f"    {a[i]:.6f} "
+        f" {bb[i]:+.6f}(x-{x[i]:g})"
+        f" {c[i]:+.6f}(x-{x[i]:g})^2"
+        f" {d[i]:+.6f}(x-{x[i]:g})^3"
+        f",   {x[i]:g} <= x <= {x[i+1]:g}"       
+        )
+
+# Function to evaluate the cubic spline
+
+def spline(x_value):
+
+    for i in range(n):
+
+        if x[i] <= x_value <= x[i+1]:
+
+            dx = x_value - x[i]
+
+            return (
+                a[i]
+                + bb[i]*dx
+                + c[i]*dx**2
+                + d[i]*dx**3
+                )
+    return np.nan
+
+#===================================================
+# Part 2: NEWTON DIVIDED DIFFERENCES
+#===================================================
+
+print("\n")
+print("=============================================")
+print("NEWTON DIVIDED DIFFERENCES")
+print("=============================================")
+
+# create length variable
+m = len(x)
+
+# Create divided-differences table
+table = np.zeros((m,m))
+
+# First column contains y-values
+table[:,0] = y
+
+# Compute divided differences
+
+for j in range(1,m):
+
+    for i in range(m-j):
+
+        table[i,j] = (
+            table[i+1, j-1] - table[i,j-1]
+            ) / (
+                x[i+j] - x[i]
+                )
+
+# Display divided difference table
+
+print("\nDivided Difference Table: \n")
+
+# create embedded loop for displaying values of table
+for i in range(m):
+    for j in range(m-i):
+        print(f"{table[i,j]:10.6f}", end="")
+    print()
+
+# Extract Newton Coefficients
+
+coefficients = table[0,:]
+
+print("\nNewton Coefficients:")
+
+for i in range(m):
+    print(f"a{i} = {coefficients[i]:.6f}")
+
+# Display Newton polynomial
+
+print("\nNewton Interpolation Polynomial:")
+
+# print the polynomial
+print(
+    f"\nP(x) = {coefficients[0]:.6f}"
+    f" {coefficients[1]:+.6f}(x-{x[0]:g})"
+    f" {coefficients[2]:+.6f}"
+    f"(x - {x[0]:g})(x-{x[1]:g})"
+    )
+
+# Function to evaluate Newton polynomial
+
+def newton_polynomial(x_value):
+
+    result = coefficients[0]
+    product = 1.0
+
+    for i in range(1,m):
+
+        product *= (x_value - x[i-1])
+
+        result += coefficients[i] * product
+
+    return result
+
+#===================================================
+# Part 3: GRAPH BOTH INTERPOLATIONS
+#===================================================
+
+# create an x array that has more values to approximate continuity
+x_plot = np.linspace(x[0], x[-1], 500)
+
+# Evaluate cubic spline
+y_spline = np.array([
+    spline(value) for value in x_plot
+    ])
+
+# Evaluate Newton polynomial
+
+y_newton = np.array([
+    newton_polynomial(value) for value in x_plot
+    ])
+
+# Plot both on the same axes
+
+plt.figure(figsize=(10,6))
+
+plt.plot(
+    x_plot,
+    y_spline ,
+    linewidth = 2.5,
+    label = "Natural Cubic Spline"
+    )
+
+plt.plot(
+    x_plot ,
+    y_newton,
+    linestyle="--",
+    linewidth = 2.5,
+    label = "Newton Divided Difference Polynomial"
+    )
+
+# Original Data points
+
+plt.scatter(
+    x,
+    y,
+    s=90,
+    zorder=5,
+    label="Data Points"
+    )
+
+# Label original data points
+
+for xi, yi in zip(x,y):
+
+    plt.annotate(
+        f"({xi:g}, {yi:g})",
+        (xi,yi),
+        xytext=(8,8),
+        textcoords="offset points"
+        )
+
+# Graph formatting
+
+plt.xlabel("x")
+plt.ylabel("y")
+
+plt.title("Natural Cubic Spline vs Newton Interpolation Polynomial")
+
+plt.grid(True)
+plt.legend()
+
+plt.show()
+
+#===================================================
+# PRINTED RESULTS
+#===================================================
+
+'''
+NATURAL CUBIC SPLINE
+
+Second derivatives:
+M0 = 0.000000
+M1 = 1.875000
+M2 = 0.000000
+
+Cubic Spline:
+
+S(x) =
+    5.000000  -2.125000(x-5) +0.000000(x-5)^2 +0.156250(x-5)^3,   5 <= x <= 7
+    2.000000  -0.250000(x-7) +0.937500(x-7)^2 -0.156250(x-7)^3,   7 <= x <= 9
+
+
+=============================================
+NEWTON DIVIDED DIFFERENCES
+=============================================
+
+Divided Difference Table: 
+
+  5.000000 -1.500000  0.625000
+  2.000000  1.000000
+  4.000000
+
+Newton Coefficients:
+a0 = 5.000000
+a1 = -1.500000
+a2 = 0.625000
+
+Newton Interpolation Polynomial:
+
+P(x) = 5.000000 -1.500000(x-5) +0.625000(x - 5)(x-7)
+'''
