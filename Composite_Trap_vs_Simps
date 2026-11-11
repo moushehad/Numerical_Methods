@@ -1,0 +1,222 @@
+'''
+This code approximates the integral using both the composite
+trapezoidal and Simpsons Methods
+
+(a) The user must enter n (even number)
+(b) Display the approximation and absolute error.
+(c) Graph the approximation and exact solution on separate graphs.
+'''
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+#==================================================================
+# Function
+#==================================================================
+
+# define the function used in the approximation
+
+def f(x):
+    return 1 / x**2
+
+# define corresponding integral
+def F(x):
+    return -1 / x
+
+#==================================================================
+# Composite Trapezoidal Rule
+#==================================================================
+
+# create function for CTR
+def composite_trapezoid(f, a, b, n):
+    
+    # define h, x, y
+    h = (b-a)/n
+    x = np.linspace(a,b,n+1)
+    y = f(x)
+
+    # def of CTR
+    approximation = h*(0.5*y[0]
+                       + np.sum(y[1:-1])
+                       + 0.5*y[-1]
+                       )
+
+    return approximation, x, y
+
+#==================================================================
+# Composite Simpson's Rule
+#==================================================================
+
+# define function for CSR
+def composite_simpson(f,a,b,n):
+    # Simpson's Rule requires n even
+    # raise a value error if n odd
+    if n % 2 != 0:
+        raise ValueError("For Simpson's Rule, n must be even.")
+
+    # define h,x,y
+    h = (b-a)/n
+    x = np.linspace(a,b,n+1)
+    y = f(x)
+
+    # def of CSR
+    approximation = (h/3)*(y[0]
+                           + y[-1]
+                           + 4*np.sum(y[1:-1:2])
+                           + 2*np.sum(y[2:-1:2])
+                           )
+
+    return approximation, x, y
+
+#==================================================================
+# Input
+#==================================================================
+
+a = 1
+b = 3
+
+n = int(input("Enter the number of subintervals n (must b even): "))
+
+if n % 2 != 0:
+    raise ValueError("Please enter an even value of n.")
+
+#==================================================================
+# Numerical Approximations
+#==================================================================
+
+# return T = approximation
+# lets x_trap = x
+# lets y_trap = y
+T, x_trap, y_trap = composite_trapezoid(f,a,b,n)
+
+# return S = approximation
+# lets x_simp = x
+# lets y_simp = y
+S, x_simp, y_simp = composite_simpson(f,a,b,n)
+
+#==================================================================
+# Exact Integral
+#
+# Integral of 1/x^2 = -1/x
+#==================================================================
+
+# exact solutions
+exact = F(b) - F(a)
+
+# find error
+trap_error = abs(exact - T)
+simp_error = abs(exact - S)
+
+#==================================================================
+# Display Results
+#==================================================================
+
+print("\n-------------------------------------------------")
+print("Numerical Integration Result")
+print("-------------------------------------------------")
+
+print(f"Interval: [{a}, {b}]")
+print(f"Number of subintervals: n = {n}")
+
+print(f"\nExact Area             = {exact:.10f}")
+
+print("\nComposite Trapezoidal Rule")
+print(f"Approximation            = {T:.10f}")
+print(f"Absolute Error           = {trap_error:.10e}")
+
+print("\nComposite Simpson's Rule")
+print(f"Approximation            = {S:.10f}")
+print(f" Absolute Error          = {simp_error:.10e}")
+
+#==================================================================
+# Graph 1: Composite Trapezoidal Rule
+#==================================================================
+
+    
+x_exact = np.linspace(a,b,500)
+plt.figure(figsize=(9,6))
+
+
+# Exact function
+plt.plot(
+    x_exact,
+    f(x_exact),
+    linewidth=2,
+    label=r"$f(x) = \frac{1}{x^2}$"
+    )
+
+# Draw each trapezoid
+for i in range(n):
+
+    xs = [x_trap[i], x_trap[i],
+          x_trap[i+1], x_trap[i+1]]
+    ys = [0, y_trap[i],
+          y_trap[i+1], 0]
+
+    plt.fill(xs,ys,alpha=0.3,edgecolor="black")
+
+# Points used in approximation
+plt.scatter(x_trap, y_trap)
+
+plt.xlabel("x")
+plt.ylabel("f(x)")
+
+plt.title(
+    f"Composite Trapezoidal Rule\n"
+    f"n = {n}, Approximation = {T:.8f}"
+    )
+
+plt.grid()
+plt.legend()
+plt.show()
+
+
+#==================================================================
+# Graph 2: Composite Simpson's Rule
+#==================================================================
+
+plt.figure(figsize=(9,6))
+
+# Exact function
+plt.plot(
+    x_exact,
+    f(x_exact),
+    linewidth=2,
+    label=r"$f(x) = \frac{1}{x^2}$"
+    )
+
+# Simpson's Rule works with pairs of subintervals
+for i in range(0,n,2):
+
+    # Three points used for quadratic interpolation
+    xp = x_simp[i:i+3]
+    yp = y_simp[i:i+3]
+
+    # Find quadratic polynomial through three points
+    coefficients = np.polyfit(xp,yp,2)
+    polynomial = np.poly1d(coefficients)
+
+    # Smooth curve for the parabola
+    xs = np.linspace(xp[0],xp[2],100)
+    ys = polynomial(xs)
+
+    # Graph the Simpson's parabola
+    plt.plot(xs,ys,linestyle="--")
+
+    # Shade area under parabola
+    plt.fill_between(xs,0,ys,alpha=0.3)
+
+# Points used in approximation
+plt.scatter(x_simp,y_simp)
+
+plt.xlabel("x")
+plt.ylabel("f(x)")
+
+plt.title(
+    f"Composite Simpson's Rule\n"
+    f"n = {n}, Approximation = {S:.8f}"
+    )
+
+plt.grid()
+plt.legend()
+plt.show()
