@@ -48,3 +48,42 @@ h = 0.1
 
 
 <img width="869" height="579" alt="three_point_endpoint_fig" src="https://github.com/user-attachments/assets/b77383db-e365-4206-aba7-efb7f8f60f5b" />
+
+
+Natural Cubic Spline vs Newton's Polynomial Interpolation
+
+=============================================
+Natural Cubic Spline
+=============================================
+Second derivatives:
+M0 = 0.000000
+M1 = 1.875000
+M2 = 0.000000
+
+Cubic Spline:
+
+S(x) =
+    5.000000  -2.125000(x-5) +0.000000(x-5)^2 +0.156250(x-5)^3,   5 <= x <= 7
+    2.000000  -0.250000(x-7) +0.937500(x-7)^2 -0.156250(x-7)^3,   7 <= x <= 9
+
+
+=============================================
+NEWTON DIVIDED DIFFERENCES
+=============================================
+
+Divided Difference Table: 
+
+  5.000000 -1.500000  0.625000
+  2.000000  1.000000
+  4.000000
+
+Newton Coefficients:
+a0 = 5.000000
+a1 = -1.500000
+a2 = 0.625000
+
+Newton Interpolation Polynomial:
+
+P(x) = 5.000000 -1.500000(x-5) +0.625000(x - 5)(x-7)
+
+<img width="961" height="569" alt="nat_cub_splin_v_polyn_interp_fig" src="https://github.com/user-attachments/assets/4fd31a2b-094c-4138-8e5f-ee2adeffe825" />
