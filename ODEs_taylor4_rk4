@@ -1,0 +1,156 @@
+import math
+import matplotlib.pyplot as plt
+
+'''
+The following code compares the Taylor method of order 4 with 
+the Runge-Kutta Method of Order 4.
+to solve the ODE y' = y - t^2 + 1 with initial condition y(0) = 0.5.
+'''
+
+# define the analytic answer for later comparison
+def exact(t):
+    return t**2 + 2*t + 1 - 0.5*math.exp(t)
+
+# define f(t,y) the RHS of the ODE
+def f(t, y):
+    return y - t**2 + 1 
+
+# define initial conditions and parameters
+h = 0.1
+t = 0.0
+y_taylor = 0.5
+y_rk = 0.5
+N = 10
+
+# define f'(t,y) for the formula
+def f2(t,y):
+    return y - t**2 - 2*t + 1
+
+# define f''(t,y) for the formula
+def f3(t,y):
+    return y - t**2 - 4*t + 1       
+
+# define f'''(t,y) for the formula
+def f4(t,y):
+    return y - t**2 - 6*t + 1   
+
+# define k1, k2, k3, k4 for the Runge-Kutta method
+def k1(t, y, h):
+    return h * f(t, y) 
+
+def k2(t, y, h):
+    return h * f(t + h/2, y + k1(t, y, h)/2)
+
+def k3(t, y, h):
+    return h * f(t + h/2, y + k2(t, y, h)/2)    
+
+def k4(t, y, h):
+    return h * f(t + h, y + k3(t, y, h))    
+
+# define the Taylor method of order 4
+def taylor4(t, y, h):
+    return (
+        y 
+        + h * f(t, y) 
+        + (h**2 / 2) * f2(t, y) 
+        + (h**3 / 6) * f3(t, y) 
+        + (h**4 / 24) * f4(t, y) 
+        )
+
+# define the Runge-Kutta method of order 4
+def runge_kutta4(t, y, h):
+    return (y + (1/6)*(
+        k1(t, y, h) 
+        + 2*k2(t, y, h) 
+        + 2*k3(t, y, h) 
+        + k4(t, y, h)
+        )
+    )
+
+# define arrays to store the values for later plotting
+t_values = [t]
+y_taylor_values = [y_taylor]
+y_rk_values = [y_rk]
+exact_values = [exact(t)]
+
+# begin loop for the Taylor and Runge-Kutta methods
+for i in range(N):
+
+    # Taylor method
+    y_taylor = taylor4(t, y_taylor, h)
+
+    # Runge-Kutta method
+    y_rk = runge_kutta4(t, y_rk, h)
+
+    # update t
+    t = t + h
+
+    # store the values in the arrays
+    t_values.append(t) 
+    y_taylor_values.append(y_taylor)
+    y_rk_values.append(y_rk)
+    exact_values.append(exact(t))
+
+# Find the error at each step for both methods
+taylor_errors = [abs(y_taylor_values[i] - exact_values[i]) for i in range(len(t_values))]
+rk_errors = [abs(y_rk_values[i] - exact_values[i]) for i in range(len(t_values))]  
+
+
+# print the results in a table format
+print("t\tTaylor O4\tRunge-Kutta O4\tExact      \tTaylor Error\tRunge-Kutta Error\t")
+print("-"*85)
+
+for i in range(len(t_values)):
+    print(f"{t_values[i]:.1f}\t"
+          f"{y_taylor_values[i]:.10f}\t"
+          f"{y_rk_values[i]:.10f}\t"
+          f"{exact_values[i]:.10f}\t"
+          f"{taylor_errors[i]:.10f}\t"
+          f"{rk_errors[i]:.10f}\t"
+          )
+
+# --------------------------
+# Plot the results and the errors
+# --------------------------    
+
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+
+# Solutions
+ax1.plot(t_values, exact_values, 'k-', label='Exact', zorder=1)
+ax1.plot(t_values, y_taylor_values, 'o--', label='Taylor O4',
+         color='orange', markersize=7, markerfacecolor='none', zorder=3)
+ax1.plot(t_values, y_rk_values, 's:', label='Runge-Kutta O4',
+         color='blue', markersize=7, markerfacecolor='none', zorder=2)
+ax1.set_ylabel('y(t)')
+ax1.set_title('Taylor O4 vs Runge-Kutta O4')
+ax1.legend()
+ax1.grid()
+
+# Errors (skip t = 0, where both errors are zero)
+ax2.semilogy(t_values[1:], taylor_errors[1:], 'o--',
+             label='Taylor O4 error', color='orange')
+ax2.semilogy(t_values[1:], rk_errors[1:], 's:',
+             label='Runge-Kutta O4 error', color='blue')
+ax2.set_xlabel('t')
+ax2.set_ylabel('Absolute error')
+ax2.legend()
+ax2.grid()
+
+plt.tight_layout()
+plt.show()
+
+'''
+t       Taylor O4       Runge-Kutta O4  Exact           Taylor Error    Runge-Kutta Error
+-------------------------------------------------------------------------------------
+0.0     0.5000000000    0.5000000000    0.5000000000    0.0000000000    0.0000000000
+0.1     0.6577562500    0.6574143750    0.6574145410    0.0003417090    0.0000001660
+0.2     0.8299829813    0.8292982760    0.8292986209    0.0006843604    0.0000003449
+0.3     1.0160986497    1.0150700584    1.0150705962    0.0010280535    0.0000005378
+0.4     1.2154605498    1.2140869057    1.2140876512    0.0013728986    0.0000007455
+0.5     1.4273583821    1.4256383956    1.4256393646    0.0017190174    0.0000009690
+0.6     1.6510071442    1.6489393904    1.6489405998    0.0020665444    0.0000012094
+0.7     1.8855392748    1.8831221786    1.8831236463    0.0024156285    0.0000014677
+0.8     2.1299959699    2.1272277907    2.1272295358    0.0027664341    0.0000017451
+0.9     2.3833175877    2.3801964018    2.3801984444    0.0031191433    0.0000020426
+1.0     2.6443330428    2.6408567242    2.6408590858    0.0034739571    0.0000023616
+'''
